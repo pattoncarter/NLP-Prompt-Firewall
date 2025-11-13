@@ -1,5 +1,3 @@
-Here is your README, thoroughly enriched with Markdown formatting, clear headers, lists, code blocks, and improved clarity for both usability and professional presentation.
-
 ***
 
 # NLP Firewall: A Lightweight DLP Classifier for RAG-Enabled LLM Prompting
@@ -12,7 +10,7 @@ Organizations often struggle to balance data security with LLMs, especially when
 
 ### Core Hypothesis
 
-A small, fine-tuned transformer model (like DistilBERT) can achieve high recall, precision, and F1—while being significantly more efficient (lower latency)—compared to a large, multi-billion parameter model (like meta-llama/Llama-Guard-3-8b) for this narrow DLP task.
+A small, fine-tuned transformer model (like DistilBERT) can achieve high recall, precision, and F1—while being significantly more efficient (lower latency)—compared to a large, multi-billion parameter model (like [meta-llama/Llama-Guard-3-8b](https://huggingface.co/meta-llama/Llama-Guard-3-8B)) for this narrow DLP task.
 
 ***
 
@@ -71,15 +69,10 @@ For faster training and evaluation, use PyTorch with GPU support. See the offici
 
 ### Install Project Dependencies
 
-> **requirements.txt is NOT provided.** Run the following commands to install required packages:
+> **requirements.txt is provided.** Run the following commands to install required packages:
 
 ```sh
-pip install transformers datasets evaluate pandas scikit-learn torch
-pip install matplotlib seaborn jupyter
-pip install accelerate
-pip install google-cloud-aiplatform
-pip install tokenizers
-pip install tensorboard
+pip install -r requirements.txt
 ```
 
 ### Hardware Requirements

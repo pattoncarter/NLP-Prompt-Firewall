@@ -1,0 +1,13 @@
+transformers 
+datasets 
+evaluate 
+pandas 
+scikit-learn 
+torch
+matplotlib 
+seaborn 
+jupyter
+accelerate
+google-cloud-aiplatform
+tokenizers
+tensorboard
