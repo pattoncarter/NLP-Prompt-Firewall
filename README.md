@@ -1,128 +1,142 @@
-# NLP Firewall: A Lightweight DLP Classifier for RAG Enabled LLM Prompting
+Here is your README, thoroughly enriched with Markdown formatting, clear headers, lists, code blocks, and improved clarity for both usability and professional presentation.
 
-1. Project Overview
+***
 
-This project is a proof-of-concept for my Case Studies in Machine Learning course to determine the feasibility of a lightweight "LLM Firewall." The goal is to create a fast, efficient, and lightweight Data Loss Prevention (DLP) model that can classify user prompts before they reach an internal Large Language Model (LLM) equipped with Retrieval-Augmented Generation (RAG).
+# NLP Firewall: A Lightweight DLP Classifier for RAG-Enabled LLM Prompting
 
-Through my work as a cybersecurity consultant, I've observed that organizations often struggle to balance data security with the power of LLMs, especially when leveraging internal data as a context resource. Many existing solutions rely on large, multi-billion parameter models that are costly and slow, making them impractical for real-time applications, and infeasible for some organizations due to budget or infrastructure constraints.
+## Project Overview
 
-Core Hypothesis
+This project is a proof-of-concept for a Case Studies in Machine Learning course to determine the feasibility of a lightweight "LLM Firewall." The goal: create a fast, efficient, and lightweight Data Loss Prevention (DLP) model that classifies user prompts before they reach an internal Large Language Model (LLM) equipped with Retrieval-Augmented Generation (RAG).
 
-This research tests the hypothesis that a small, fine-tuned transformer model (like DistilBERT) can be as effective (high recall, precision, F1) and significantly more efficient (low latency) than a large, multi-billion parameter model (like meta-llama/Llama-Guard-3-8b) for this "narrow" classification task.
+Organizations often struggle to balance data security with LLMs, especially when leveraging internal data for context. Most DLP solutions rely on large, multi-billion parameter models that are costly and slow, making them impractical for real-time applications and out-of-reach for some organizations due to infrastructure constraints.
 
-2. Project Structure
+### Core Hypothesis
 
-This project consists of data generation, model training, and model evaluation scripts.
+A small, fine-tuned transformer model (like DistilBERT) can achieve high recall, precision, and F1—while being significantly more efficient (lower latency)—compared to a large, multi-billion parameter model (like meta-llama/Llama-Guard-3-8b) for this narrow DLP task.
 
-Key Files & Directories
+***
 
-Data Files
+## Project Structure
 
-benign_dataset.csv: (Generated) A CSV of ~9,000 "benign" corporate prompts.
+The project includes scripts for data generation, model training, and model evaluation.
 
-malicious_dataset.csv: (Manually created) A CSV of ~1,000 "malicious" exfiltration prompts.
+### Key Files & Directories
 
-full_dataset.csv: The final combined and shuffled dataset of ~10,000 prompts.
+**Data Files**
+- `benign_dataset.csv`: ~9,000 "benign" corporate prompts (generated).
+- `malicious_dataset.csv`: ~1,000 manually created "malicious" exfiltration prompts.
+- `full_dataset.csv`: Combined, shuffled dataset of ~10,000 prompts.
 
-Model Training Scripts
+**Model Training Scripts**
+- `generate_dataset.py`: Uses Vertex AI Search (grounded on non-sensitive corporate docs) to generate realistic, safe prompts.
+- `NLP_Fine_Tune.py`: Loads `full_dataset.csv`, splits 80/20, fine-tunes DistilBERT.
 
-generate_dataset.py: (From conversation history) Generates benign_dataset.csv by using Vertex AI Search (grounded on non-sensitive corporate docs) to create realistic, safe prompts.
+**Model Evaluation Scripts**
+- `evaluate_models.py`: Compares the local model to Llama Guard, printing a summary table.
+- `evaluate_models_by_category.py`: Offers detailed metrics (Precision, Recall, F1) per prompt category.
+- `generate_visualizations.py`: Runs a full evaluation and generates/saves:
+    - Overall metrics and per-category F1 tables (Markdown).
+    - `confusion_matrix_local.png`
+    - `confusion_matrix_llama_guard.png`
+    - `roc_curve_local.png` (for DistilBERT)
+    - `latency_comparison.png`
 
-NLP_Fine_Tune.py: (From conversation history) The main script. It loads full_dataset.csv, splits it 80/20, and fine-tunes a DistilBERT model.
+**Model Artifacts**
+- `my_final_firewall_model/`: The saved, fine-tuned DistilBERT model.
 
-Model Evaluation Scripts
+***
 
-evaluate_models.py: A simple evaluation script that compares the local model vs. Llama Guard and prints a results table.
+## Methodology & Pipeline
 
-evaluate_models_by_category.py: A detailed evaluation script that provides a performance breakdown (Precision, Recall, F1) for each prompt category.
+The research pipeline follows these core steps:
 
-generate_visualizations.py: The primary script for the paper's results. It runs a full evaluation and generates/saves:
+1. **Data Generation**  
+   - Benign prompts: Created by `generate_dataset.py` using a grounded Gemini model on Vertex AI Search.  
+   - Malicious prompts: Manually curated.  
+   - Combined and shuffled into `full_dataset.csv`.
+2. **Model Training**
+   - `NLP_Fine_Tune.py` trains and saves the DistilBERT model.
+3. **Model Evaluation**
+   - `generate_visualizations.py` runs evaluation on the holdout set against both DistilBERT and Llama Guard 2.
+4. **Result Generation**
+   - Metrics (Accuracy, Precision, Recall, F1, Latency) are reported. Final tables and plots are auto-generated.
 
-Overall metrics table (Markdown).
+***
 
-Per-category F1-score table (Markdown).
+## Environment Setup
 
-confusion_matrix_local.png
+It is recommended to use conda as your virtual environment manager. However, PyTorch does **not** support conda distributions. **Install PyTorch via pip within your activated conda environment.**
 
-confusion_matrix_llama_guard.png
+For faster training and evaluation, use PyTorch with GPU support. See the official [PyTorch installation guide](https://pytorch.org/get-started/locally/) for details.
 
-roc_curve_local.png (for the DistilBERT model)
+### Install Project Dependencies
 
-latency_comparison.png
+> **requirements.txt is NOT provided.** Run the following commands to install required packages:
 
-Model Artifacts
-
-my_final_firewall_model/: (Generated) The saved, fine-tuned DistilBERT model.
-
-3. Methodology & Pipeline
-
-The project follows a 4-step process to replicate the research.
-
-Data Generation: The benign dataset is created by generate_dataset.py, which uses a grounded Gemini model on a Vertex AI Search data store to produce realistic corporate-style prompts. The malicious dataset is created manually. These are combined into full_dataset.csv.
-
-Model Training:
-
-The NLP_Fine_Tune.py script trains the primary DistilBERT model and saves it.
-
-Model Evaluation: The generate_visualizations.py script loads the validation split (the 20% hold-out set) and runs it against both our fine-tuned DistilBERT and the 8B-parameter Llama Guard 2 model.
-
-Result Generation: The evaluation script measures all key metrics (Accuracy, Precision, Recall, F1, Latency) and generates the final tables and plots for the paper.
-
-4. Environment Setup
-
-The enviornment can be set up using conda as a virtual environment manager (as I have); however, it should be noted that PyTorch does not support conda distributions. Therefore, it is recommended to install PyTorch via pip within the conda environment.
-
-It is recommended to leverage PyTorch with GPU support for faster training & evaluation times. Please refer to the official PyTorch installation guide for instructions on installing the appropriate version for your system: https://pytorch.org/get-started/locally/
-
-Install Project Dependencies:
-A requirements.txt is not provided, but you can install all required packages by running:
-
+```sh
 pip install transformers datasets evaluate pandas scikit-learn torch
 pip install matplotlib seaborn jupyter
 pip install accelerate
 pip install google-cloud-aiplatform
 pip install tokenizers
 pip install tensorboard
+```
 
-### Hardware Requirements:
-It shoiuld be noted that the DistilBERT fine-tuning process & evaluation of llama-guard-3-8b can be resource-intensive. During testing, I found that the llama-guard-3-8b model required ~16GB of GPU memory to run inference effectively. Therefore, it is recommended to use a machine with at least 16GB of GPU memory for optimal performance. I performed my experiments with an NVIDIA RTX 3090 GPU.
+### Hardware Requirements
 
-5. Usage / How to Replicate Results
+- **DistilBERT fine-tuning** and **Llama Guard 8B evaluation** are resource-intensive.
+- Llama Guard 8B inference requires **~16 GB GPU memory**.
+- For optimal performance, use a machine with at least 16GB of GPU RAM.
+- All experiments were performed with an NVIDIA RTX 3090 GPU.
 
-Follow these steps in order from your activated llm_firewall environment.
+***
 
-Step 1: Generate & Prepare Data
+## Usage / Reproducing Results
 
-Configure generate_dataset.py with your GCP Project ID and Vertex AI Search Data Store ID. My GCP project consisted of non-sensitive, "dummy" corporate documentation (found in acme-sample-corpus) to ground the benign prompt generation stored in a Vertex AI Search data store.
+Follow these steps from your activated `llm_firewall` environment:
 
-Run the script to create benign_dataset.csv:
+### Step 1: Generate & Prepare Data
 
-python BenignDataGen_FULL.py
+- Configure `generate_dataset.py` with your **GCP Project ID** and **Vertex AI Search Data Store ID**.
+    - Example: "dummy" corporate documents (in `acme-sample-corpus`) grounded in a Vertex AI Search data store.
 
+- To create the **benign** dataset:
+    ```sh
+    python BenignDataGen_FULL.py
+    ```
+- To create the **malicious** dataset:
+    ```sh
+    python MaliciousDataGen.py
+    ```
 
-Run the script to create malicious_dataset.csv:
+### Step 2: Train Your Models
 
-python MaliciousDataGen.py
+- Fine-tune DistilBERT (saves model in `my_final_firewall_model/`):
+    ```sh
+    python NLP_Fine_Tune.py
+    ```
 
-Step 2: Train Your Models
+### Step 3: Run Evaluation & Generate Plots
 
-Run the DistilBERT fine-tuning script. This will create the my_final_firewall_model directory.
+- Perform full evaluation and generate plots/tables:
+    ```sh
+    python evaluation.py
+    python metric_viz.py
+    ```
 
-python NLP_Fine_Tune.py
+- Output: Results tables (printed to console), `.png` plots saved to project directory.
 
+#### (Optional) Monitor Training in Real Time
 
-Step 3: Run Evaluation & Generate Plots
+- Open a second terminal tab/window:
+    ```sh
+    # In Terminal 1
+    python NLP_Fine_Tune.py
 
-Run the main evaluation & evaluation scripts. This will perform the full evaluation against your model and Llama Guard, then save the .png plots and print your results tables to the console.
+    # In Terminal 2
+    tensorboard --logdir my_llm_firewall_model
+    ```
 
-python evaluation.py
+***
 
-python metric_viz.py
-
-
-
-(Optional) To watch your training run (for NLP_Fine_Tune.py) in real-time, use TensorBoard.
-
-Terminal 1: python NLP_Fine_Tune.py
-
-Terminal 2: tensorboard --logdir my_llm_firewall_model
+## Find the Link to my Full Report Here: "[Insert Link to Full Report]"
