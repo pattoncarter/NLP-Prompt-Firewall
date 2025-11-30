@@ -201,7 +201,7 @@ def plot_roc_curve(y_true, y_scores, title, filename):
 
 def plot_latency_chart(local_latency, guard_latency, filename):
     print(f"Generating Latency Chart: {filename}")
-    models = ['Your Model (DistilBERT)', 'Llama Guard 2 (8B)']
+    models = ['My Model (DistilBERT)', 'Llama Guard 3 (8B)']
     latencies = [local_latency, guard_latency]
     
     plt.figure(figsize=(8, 6))
@@ -255,18 +255,18 @@ def main():
     
     # Plot 1 & 2: Confusion Matrices
     plot_confusion_matrix(true_labels, local_preds, 
-                          'Confusion Matrix - Your Model (DistilBERT)', 
+                          'Confusion Matrix - My Model (DistilBERT)', 
                           'confusion_matrix_local.png')
     if not guard_failed:
         plot_confusion_matrix(true_labels, guard_preds, 
-                              'Confusion Matrix - Llama Guard 2 (8B)', 
+                              'Confusion Matrix - Llama Guard 3 (8B)', 
                               'confusion_matrix_llama_guard.png')
     
     # Plot 3: ROC Curve (Only for your model)
     print("\nNote: ROC Curve is only generated for your local classifier,")
     print("as Llama Guard (a generative model) does not output probability scores.")
     plot_roc_curve(true_labels, local_scores, 
-                   'ROC Curve - Your Model (DistilBERT)', 
+                   'ROC Curve - My Model (DistilBERT)', 
                    'roc_curve_local.png')
     
     # Plot 4: Latency Bar Chart
@@ -276,7 +276,7 @@ def main():
 
     # --- Print Final Comparison Table ---
     print("\n" + "="*80)
-    print("--- FINAL SUMMARY TABLE (FOR YOUR PAPER) ---")
+    print("--- FINAL SUMMARY TABLE ---")
     print("="*80)
     
     # Extract metrics for the table
@@ -285,7 +285,7 @@ def main():
     
     print("| Model | Accuracy | Precision (Malicious) | Recall (Malicious) | F1 (Malicious) | Avg. Latency (ms) |")
     print("| :--- | :---: | :---: | :---: | :---: | :---: |")
-    print(f"| Your Model | {local_report['accuracy']:.4f} | {local_metrics['precision']:.4f} | {local_metrics['recall']:.4f} | {local_metrics['f1-score']:.4f} | {local_avg_latency:.2f} |")
+    print(f"| My Model | {local_report['accuracy']:.4f} | {local_metrics['precision']:.4f} | {local_metrics['recall']:.4f} | {local_metrics['f1-score']:.4f} | {local_avg_latency:.2f} |")
     
     if not guard_failed:
         print(f"| Llama Guard 3 | {guard_report['accuracy']:.4f} | {guard_metrics['precision']:.4f} | {guard_metrics['recall']:.4f} | {guard_metrics['f1-score']:.4f} | {guard_avg_latency:.2f} |")
