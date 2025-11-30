@@ -12,38 +12,15 @@ from vertexai.generative_models import (
     grounding
 )
 
-# -------------------------------------------------------------------
-# 1. USER CONFIGURATION
-# -------------------------------------------------------------------
-PROJECT_ID = "clean-wonder-449121-k2"  # Your Google Cloud Project ID
-LOCATION = "global"           # The region for Vertex AI
-DATA_STORE_ID = "acme-corp-internal-data-store_1762726333370" # The ID of your Vertex AI Search data store
-MODEL_NAME = "gemini-2.5-flash"    # We'll use Gemini 2.5 Flash
+# configurations
+PROJECT_ID = "X"  # Your Google Cloud Project ID
+LOCATION = "X"           # The region for Vertex AI
+DATA_STORE_ID = "X" # The ID of your Vertex AI Search data store
+MODEL_NAME = "gemini-2.5-flash"
 OUTPUT_CSV_FILE = "benign_dataset.csv"  # The name of your final dataset
-
-# -------------------------------------------------------------------
-# 2. COST ESTIMATION & SCRIPT CONFIG
-# -------------------------------------------------------------------
-# !!! THESE ARE ESTIMATES. Check your own project's billing page.
-# Based on public pricing for Gemini 1.5 Pro & Vertex AI Search.
-
-# Token costs (per 1,000,000 tokens)
-PRICE_PER_MILLION_INPUT_TOKENS = 0.30  # Example: $0.30 / 1M input
-PRICE_PER_MILLION_OUTPUT_TOKENS = 2.50  # Example: $2.50 / 1M output
-
-# Grounding costs (per API call)
-# (Based on $4.00/1k for Search + $2.50/1k for Grounding = $6.50/1k)
-PRICE_PER_GROUNDING_CALL = 0.0065
-
-# Script robustness
 MAX_RETRIES = 3
 
-# -------------------------------------------------------------------
-# 3. META-PROMPT DEFINITIONS
-# -------------------------------------------------------------------
-# To get ~10,000 prompts, you need 200 of these
-# (200 meta-prompts * 50 prompts each = 10,000)
-
+# meta-prompt definitions
 META_PROMPTS = [
     # 001
     {
@@ -1065,9 +1042,7 @@ SAFETY_SETTINGS = {
     HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: SafetySetting.HarmBlockThreshold.BLOCK_ONLY_HIGH,
 }
 
-# -------------------------------------------------------------------
-# 4. HELPER FUNCTIONS
-# -------------------------------------------------------------------
+# helper functions
 
 def is_file_empty(file_path):
     return not os.path.exists(file_path) or os.path.getsize(file_path) == 0
@@ -1079,29 +1054,27 @@ def write_header_if_needed(file_path):
             writer.writerow(["prompt", "label", "category"])
         print(f"Created new file and wrote header to: {file_path}")
 
-# -------------------------------------------------------------------
-# 5. MAIN EXECUTION
-# -------------------------------------------------------------------
+# MAIN EXECUTION
 
 def main():
     print(f"Initializing Vertex AI for project {PROJECT_ID}...")
     vertexai.init(project=PROJECT_ID, location=LOCATION)
 
-    # 1. Set up the Grounding Tool
+    # Set up the Grounding Tool
     data_store_path = (
         f"projects/{PROJECT_ID}/locations/global/collections/"
         f"default_collection/dataStores/{DATA_STORE_ID}"
     )
-    # Create the VertexAISearch object
+    # Create VertexAISearch object
     vertex_ai_search = grounding.VertexAISearch(datastore=data_store_path)
     
-    # Create a Retrieval object that contains the search tool
+    # Create retrieval object
     retrieval_tool = grounding.Retrieval(source=vertex_ai_search)
     
-    # Create the Tool object from the Retrieval object
+    # Create tool object from retrieval object
     grounding_tool = Tool.from_retrieval(retrieval_tool)
     
-    # 2. Initialize the Generative Model
+    # Initialize model
     model = GenerativeModel(
         MODEL_NAME,
         safety_settings=SAFETY_SETTINGS,
@@ -1111,17 +1084,13 @@ def main():
     print(f"Model {MODEL_NAME} initialized.")
     print(f"Grounding to data store: {DATA_STORE_ID}")
 
-    # 3. Ensure CSV file has a header
     write_header_if_needed(OUTPUT_CSV_FILE)
 
     # 4. Initialize progress and cost trackers
     total_prompts_generated = 0
-    total_cost_estimate = 0.0
-    total_input_tokens = 0
-    total_output_tokens = 0
     num_batches = len(META_PROMPTS)
 
-    # 5. Main generation loop
+    # generation loop
     with open(OUTPUT_CSV_FILE, 'a', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         
@@ -1136,39 +1105,22 @@ def main():
             response = None
             for attempt in range(MAX_RETRIES):
                 try:
-                    # 6. Call the API
+                    # Call API
                     print(f"  Attempt {attempt+1}/{MAX_RETRIES}: Sending prompt to Gemini...")
                     response = model.generate_content(
                         [full_prompt_text],
-                        # Note: The tool is already in the model
                     )
                     
-                    # 7. Parse the JSON response
+                    # Parse JSON 
                     response_text = response.candidates[0].content.parts[0].text
                     generated_prompts = json.loads(response_text)
                     
                     if not isinstance(generated_prompts, list):
                         print(f"  ERROR: Model did not return a list. Retrying...")
-                        time.sleep(5) # Wait before retrying
+                        time.sleep(5)
                         continue
 
-                    # 8. Calculate Cost for this batch
-                    usage = response.usage_metadata
-                    input_tokens = usage.prompt_token_count
-                    output_tokens = usage.candidates_token_count
-                    
-                    batch_token_cost = (
-                        (input_tokens / 1_000_000) * PRICE_PER_MILLION_INPUT_TOKENS +
-                        (output_tokens / 1_000_000) * PRICE_PER_MILLION_OUTPUT_TOKENS
-                    )
-                    batch_total_cost = batch_token_cost + PRICE_PER_GROUNDING_CALL
-                    
-                    # Update running totals
-                    total_cost_estimate += batch_total_cost
-                    total_input_tokens += input_tokens
-                    total_output_tokens += output_tokens
-
-                    # 9. Write to CSV
+                    # Write to CSV
                     prompts_in_batch = 0
                     for prompt_text in generated_prompts:
                         if isinstance(prompt_text, str) and prompt_text.strip():
@@ -1178,9 +1130,7 @@ def main():
                     total_prompts_generated += prompts_in_batch
                     
                     print(f"  Success: Wrote {prompts_in_batch} prompts.")
-                    print(f"  Cost (est.): This Batch: ${batch_total_cost:.4f} | Total: ${total_cost_estimate:.4f}")
                     
-                    # If successful, break out of the retry loop
                     break 
 
                 except json.JSONDecodeError:
@@ -1199,9 +1149,6 @@ def main():
     print("\n-------------------------------------------------")
     print(f"Dataset generation complete.")
     print(f"Total new prompts added: {total_prompts_generated}")
-    print(f"Total input tokens: {total_input_tokens}")
-    print(f"Total output tokens: {total_output_tokens}")
-    print(f"FINAL ESTIMATED COST: ${total_cost_estimate:.4f}")
     print(f"Data saved to: {OUTPUT_CSV_FILE}")
     print("-------------------------------------------------")
 
